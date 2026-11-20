@@ -205,6 +205,12 @@
       font-weight: 700;
     }
 
+    .helper-hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0 0 10px;
+    }
+
     .search-input, .text-input, .textarea-input {
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -274,11 +280,54 @@
       vertical-align: middle;
     }
 
-    .row-actions {
+    .emp-name-btn {
+      background: none;
+      border: none;
+      padding: 2px 6px;
+      margin: -2px -6px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .emp-name-btn:hover {
+      background: var(--purple-soft);
+      color: var(--purple);
+    }
+
+    tr.selected-row .emp-name-btn {
+      background: var(--purple-soft);
+      color: var(--purple);
+      font-weight: 700;
+    }
+
+    .selected-banner {
+      background: var(--purple-soft);
+      color: var(--purple);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
       display: flex;
-      gap: 8px;
+      justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .clear-sel-btn {
+      background: #FFFFFF;
+      color: var(--purple);
+      border: 1px solid #D8C7EA;
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
     }
 
     .status-badge, .action-btn {
@@ -415,6 +464,7 @@
           <h2 class="panel-title" id="tableTitle">Huidige aanwezigheid</h2>
           <input class="search-input" id="searchInput" type="search" placeholder="Zoek op naam of organisatie..." />
         </div>
+        <p class="helper-hint">Tip: klik op een medewerkernaam om die persoon rechts te selecteren voor naamwijziging of verwijderen.</p>
 
         <div class="subtabs">
           <button class="subtab active" id="tabEmployeesAll" type="button">Alle medewerkers (<span id="countAll">0</span>)</button>
@@ -427,7 +477,7 @@
             <thead id="tableHead">
               <tr>
                 <th id="sortName">Naam ▲▼</th>
-                <th id="sortStatus">Status &amp; Acties ▲▼</th>
+                <th id="sortStatus">Status ▲▼</th>
               </tr>
             </thead>
             <tbody id="tableBody">
@@ -451,18 +501,30 @@
           </form>
         </div>
 
-        <div class="panel">
-          <h3 class="panel-title" style="margin-bottom:10px;">Medewerker toevoegen / bewerken</h3>
+        <div class="panel" id="empManagePanel">
+          <h3 class="panel-title" style="margin-bottom:10px;">Medewerkerbeheer</h3>
+
           <form id="addEmpForm" class="form-row">
             <div class="form-inline">
               <input class="text-input" id="newEmpName" type="text" placeholder="Nieuwe medewerker (Voor- en achternaam)" required />
               <button class="action-btn btn-primary" type="submit">Toevoegen</button>
             </div>
           </form>
-          <form id="editEmpForm" class="form-row" style="margin-top:12px;">
-            <input class="text-input" id="editEmpSearch" type="text" placeholder="Bestaande naam exact of deels..." />
+
+          <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;" />
+
+          <div id="selectedBanner" class="selected-banner" style="display:none; margin-bottom:8px;">
+            <span id="selectedLabel">Geselecteerd: —</span>
+            <button type="button" class="clear-sel-btn" id="clearSelectionBtn">Deselecteer</button>
+          </div>
+
+          <form id="editEmpForm" class="form-row">
+            <input class="text-input" id="editEmpSearch" type="text" placeholder="Klik op een naam of zoek bestaande naam..." />
             <input class="text-input" id="editEmpNewName" type="text" placeholder="Nieuwe naam" />
-            <button class="action-btn btn-secondary" type="submit">Naam bijwerken</button>
+            <div class="form-inline">
+              <button class="action-btn btn-secondary" type="submit" style="flex:1;">Naam bijwerken</button>
+              <button class="action-btn btn-danger" type="button" id="deleteSelectedEmpBtn">Verwijderen</button>
+            </div>
           </form>
         </div>
 
@@ -492,12 +554,51 @@
     let currentTab = "employees_all";
     let sortBy = "name";
     let sortAsc = true;
+    let selectedEmployee = null;
 
     const tableHeadEl = document.getElementById("tableHead");
     const tableBodyEl = document.getElementById("tableBody");
     const searchInputEl = document.getElementById("searchInput");
     const statusMsgEl = document.getElementById("statusMsg");
     const lastUpdatedEl = document.getElementById("lastUpdated");
+    const selectedBannerEl = document.getElementById("selectedBanner");
+    const selectedLabelEl = document.getElementById("selectedLabel");
+    const editEmpSearchEl = document.getElementById("editEmpSearch");
+    const editEmpNewNameEl = document.getElementById("editEmpNewName");
+
+    function syncSelectionUi() {
+      if (selectedEmployee) {
+        selectedBannerEl.style.display = "flex";
+        selectedLabelEl.textContent = `Geselecteerd: ${selectedEmployee.name}`;
+        editEmpSearchEl.value = selectedEmployee.name;
+      } else {
+        selectedBannerEl.style.display = "none";
+        selectedLabelEl.textContent = "Geselecteerd: —";
+      }
+      renderTable();
+    }
+
+    function selectEmployee(emp) {
+      selectedEmployee = emp;
+      syncSelectionUi();
+    }
+
+    function clearSelection() {
+      selectedEmployee = null;
+      editEmpSearchEl.value = "";
+      editEmpNewNameEl.value = "";
+      syncSelectionUi();
+    }
+
+    function findMatchingEmployee() {
+      if (selectedEmployee) {
+        const stillExists = employees.find(e => e.row === selectedEmployee.row);
+        if (stillExists) return stillExists;
+      }
+      const q = editEmpSearchEl.value.trim().toLowerCase();
+      if (!q) return null;
+      return employees.find(emp => emp.name.toLowerCase().includes(q)) || null;
+    }
 
     function updateKpis() {
       const total = employees.length;
@@ -579,7 +680,7 @@
       tableHeadEl.innerHTML = `
         <tr>
           <th id="sortName">Naam ▲▼</th>
-          <th id="sortStatus">Status &amp; Acties ▲▼</th>
+          <th id="sortStatus">Status ▲▼</th>
         </tr>
       `;
       document.getElementById("sortName").addEventListener("click", () => {
@@ -617,31 +718,29 @@
       tableBodyEl.innerHTML = "";
       list.forEach(emp => {
         const tr = document.createElement("tr");
+        if (selectedEmployee && selectedEmployee.row === emp.row) {
+          tr.classList.add("selected-row");
+        }
+
         const tdName = document.createElement("td");
-        tdName.textContent = emp.name;
+        const nameBtn = document.createElement("button");
+        nameBtn.type = "button";
+        nameBtn.className = "emp-name-btn";
+        nameBtn.textContent = emp.name;
+        nameBtn.title = "Klik om medewerker te selecteren voor bewerken of verwijderen";
+        nameBtn.addEventListener("click", () => selectEmployee(emp));
+        tdName.appendChild(nameBtn);
 
-        const tdActions = document.createElement("td");
-        const actionsWrap = document.createElement("div");
-        actionsWrap.className = "row-actions";
-
+        const tdStatus = document.createElement("td");
         const badge = document.createElement("button");
         badge.type = "button";
         badge.className = "status-badge" + (emp.present ? " present" : "");
         badge.textContent = emp.present ? "Aanwezig" : "Niet aanwezig";
         badge.addEventListener("click", () => toggleStatus(emp));
-
-        const delBtn = document.createElement("button");
-        delBtn.type = "button";
-        delBtn.className = "action-btn btn-danger";
-        delBtn.textContent = "Verwijderen";
-        delBtn.addEventListener("click", () => deleteEmployee(emp));
-
-        actionsWrap.appendChild(badge);
-        actionsWrap.appendChild(delBtn);
-        tdActions.appendChild(actionsWrap);
+        tdStatus.appendChild(badge);
 
         tr.appendChild(tdName);
-        tr.appendChild(tdActions);
+        tr.appendChild(tdStatus);
         tableBodyEl.appendChild(tr);
       });
     }
@@ -671,8 +770,11 @@
         employees = Array.isArray(data.employees) ? data.employees : [];
         guests = Array.isArray(data.guests) ? data.guests : [];
         handovers = Array.isArray(data.handovers) ? data.handovers : [];
+        if (selectedEmployee) {
+          selectedEmployee = employees.find(e => e.row === selectedEmployee.row) || null;
+        }
         updateKpis();
-        renderTable();
+        syncSelectionUi();
         renderHandovers();
         statusMsgEl.textContent = "Gesynchroniseerd met Google Sheet";
         lastUpdatedEl.textContent = "Laatst bijgewerkt: " + new Date().toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -692,16 +794,27 @@
       );
     }
 
-    function deleteEmployee(emp) {
-      const confirmed = window.confirm(`Weet je zeker dat je ${emp.name} wilt verwijderen uit de medewerkerslijst?`);
+    function deleteSelectedEmployee() {
+      const target = findMatchingEmployee();
+      if (!target) {
+        statusMsgEl.textContent = "Klik eerst op een medewerkernaam of vul een naam in om te verwijderen";
+        return;
+      }
+
+      const confirmed = window.confirm(`Weet je zeker dat je ${target.name} wilt verwijderen uit de medewerkerslijst?`);
       if (!confirmed) return;
 
-      employees = employees.filter(e => e.row !== emp.row);
+      employees = employees.filter(e => e.row !== target.row);
+      if (selectedEmployee && selectedEmployee.row === target.row) {
+        selectedEmployee = null;
+        editEmpSearchEl.value = "";
+        editEmpNewNameEl.value = "";
+      }
       updateKpis();
-      renderTable();
+      syncSelectionUi();
       postAction(
-        { action: "deleteEmployee", row: emp.row },
-        `Medewerker verwijderd: ${emp.name}`
+        { action: "deleteEmployee", row: target.row },
+        `Medewerker verwijderd: ${target.name}`
       );
     }
 
@@ -714,6 +827,25 @@
         `Gast afgemeld: ${guest.name}`
       );
     }
+
+    document.getElementById("clearSelectionBtn").addEventListener("click", clearSelection);
+    document.getElementById("deleteSelectedEmpBtn").addEventListener("click", deleteSelectedEmployee);
+
+    editEmpSearchEl.addEventListener("input", () => {
+      const q = editEmpSearchEl.value.trim().toLowerCase();
+      if (!q) {
+        selectedEmployee = null;
+        syncSelectionUi();
+        return;
+      }
+      const exactOrFirst = employees.find(e => e.name.toLowerCase() === q) || employees.find(e => e.name.toLowerCase().includes(q));
+      selectedEmployee = exactOrFirst || null;
+      selectedBannerEl.style.display = selectedEmployee ? "flex" : "none";
+      if (selectedEmployee) {
+        selectedLabelEl.textContent = `Geselecteerd: ${selectedEmployee.name}`;
+      }
+      renderTable();
+    });
 
     document.getElementById("guestForm").addEventListener("submit", (e) => {
       e.preventDefault();
@@ -746,13 +878,10 @@
 
     document.getElementById("editEmpForm").addEventListener("submit", (e) => {
       e.preventDefault();
-      const searchVal = document.getElementById("editEmpSearch").value.trim().toLowerCase();
-      const newName = document.getElementById("editEmpNewName").value.trim();
-      if (!searchVal || !newName) return;
-
-      const match = employees.find(emp => emp.name.toLowerCase().includes(searchVal));
-      if (!match) {
-        statusMsgEl.textContent = "Geen medewerker gevonden met die naam";
+      const newName = editEmpNewNameEl.value.trim();
+      const match = findMatchingEmployee();
+      if (!match || !newName) {
+        statusMsgEl.textContent = "Selecteer een medewerker en vul een nieuwe naam in";
         return;
       }
 
@@ -760,8 +889,10 @@
         { action: "updateEmployee", row: match.row, name: newName },
         `Naam gewijzigd: ${match.name} → ${newName}`
       );
-      document.getElementById("editEmpSearch").value = "";
-      document.getElementById("editEmpNewName").value = "";
+      editEmpNewNameEl.value = "";
+      editEmpSearchEl.value = newName;
+      selectedEmployee = { ...match, name: newName };
+      syncSelectionUi();
     });
 
     document.getElementById("handoverForm").addEventListener("submit", (e) => {
