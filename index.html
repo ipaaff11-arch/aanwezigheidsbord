@@ -17,7 +17,10 @@
       --muted: #6B7280;
     }
 
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
     body {
       margin: 0;
@@ -56,9 +59,15 @@
       color: var(--purple);
       letter-spacing: -1px;
     }
-    .logo span { color: var(--green); }
 
-    .greeting-wrap { text-align: center; }
+    .logo span {
+      color: var(--green);
+    }
+
+    .greeting-wrap {
+      text-align: center;
+    }
+
     .greeting {
       font-family: 'Caveat', cursive;
       font-size: 42px;
@@ -66,6 +75,7 @@
       color: var(--purple);
       line-height: 1;
     }
+
     .subtitle {
       font-size: 13px;
       color: var(--muted);
@@ -77,8 +87,17 @@
       font-family: 'Caveat', cursive;
       color: var(--purple);
     }
-    .datetime .date { font-size: 24px; line-height: 1.05; }
-    .datetime .time { font-size: 32px; font-weight: 700; line-height: 1.05; }
+
+    .datetime .date {
+      font-size: 24px;
+      line-height: 1.05;
+    }
+
+    .datetime .time {
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1.05;
+    }
 
     .grid {
       display: grid;
@@ -106,7 +125,9 @@
       text-overflow: ellipsis;
     }
 
-    .pill:active { transform: scale(0.98); }
+    .pill:active {
+      transform: scale(0.98);
+    }
 
     .pill.present {
       background: var(--green);
@@ -127,133 +148,21 @@
       width: 100%;
     }
 
-    .footer-title { font-weight: 700; font-size: 16px; color: var(--text); }
-    .footer-sub { font-size: 13px; color: var(--muted); }
+    .footer-title {
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--text);
+    }
+
+    .footer-sub {
+      font-size: 13px;
+      color: var(--muted);
+    }
 
     .status-bar {
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      gap: 12px;
       font-size: 12px;
       color: var(--muted);
-    }
-  </style>
-</head>
-<body>
-  <div class="board">
-    <header>
-      <div class="logo">aaff<span>.</span></div>
-      <div class="greeting-wrap">
-        <div class="greeting" id="greeting">Goedemiddag, Welkom in Ede.</div>
-        <div class="subtitle">Meld je aan of af voor je aanwezigheid</div>
-      </div>
-      <div class="datetime">
-        <div class="date" id="dateText"></div>
-        <div class="time" id="timeText"></div>
-      </div>
-    </header>
-
-    <div class="grid" id="grid"></div>
-
-    <button class="footer-box" id="helpBtn" type="button">
-      <div style="font-size:26px;">🎧</div>
-      <div>
-        <div class="footer-title">Hulp nodig?</div>
-        <div class="footer-sub">Neem contact op met Support</div>
-      </div>
-    </button>
-
-    <div class="status-bar">
-      <span id="syncStatus">Verbinden met aanwezigheidsbord...</span>
-      <span id="counterText">0 aanwezig</span>
-    </div>
-  </div>
-
-  <script>
-    // VERVANG DIT DOOR JOUW GEKOPIEERDE APPS SCRIPT WEB-APP URL:
-    const WEB_APP_URL = "https://script.google.com/macros/s/JOUW_SCRIPT_ID/exec";
-
-    const gridEl = document.getElementById("grid");
-    const syncStatusEl = document.getElementById("syncStatus");
-    const counterTextEl = document.getElementById("counterText");
-
-    let employees = [];
-
-    function updateClockAndGreeting() {
-      const now = new Date();
-      const hour = now.getHours();
-      let part = "Goedenavond";
-      if (hour < 12) part = "Goedemorgen";
-      else if (hour < 18) part = "Goedemiddag";
-
-      document.getElementById("greeting").textContent = `${part}, Welkom in Ede.`;
-
-      const days = ["Zondag", "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag"];
-      const months = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"];
-      document.getElementById("dateText").textContent =
-        `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
-      document.getElementById("timeText").textContent =
-        now.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
-    }
-
-    function updateCounter() {
-      const count = employees.filter(e => e.present).length;
-      counterTextEl.textContent = `${count} van ${employees.length} aanwezig`;
-    }
-
-    function renderGrid() {
-      gridEl.innerHTML = "";
-      employees.forEach((emp, idx) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "pill" + (emp.present ? " present" : "");
-        btn.textContent = emp.name;
-        btn.addEventListener("click", () => toggleEmployee(idx, btn));
-        gridEl.appendChild(btn);
-      });
-      updateCounter();
-    }
-
-    async function loadEmployees() {
-      try {
-        syncStatusEl.textContent = "Namen en statussen laden...";
-        const res = await fetch(WEB_APP_URL, { cache: "no-store" });
-        const data = await res.json();
-        employees = data.employees || [];
-        renderGrid();
-        syncStatusEl.textContent = "Gekoppeld aan Google Sheet";
-      } catch (err) {
-        syncStatusEl.textContent = "Fout bij laden uit Google Sheet";
-      }
-    }
-
-    async function toggleEmployee(idx, btn) {
-      const emp = employees[idx];
-      const nextPresent = !emp.present;
-      emp.present = nextPresent;
-      btn.classList.toggle("present", nextPresent);
-      updateCounter();
-      syncStatusEl.textContent = "Opslaan in Google Sheet...";
-
-      try {
-        await fetch(WEB_APP_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ row: emp.row, present: nextPresent })
-        });
-        syncStatusEl.textContent = `Laatst bijgewerkt: ${emp.name} (${nextPresent ? "Aanwezig" : "Afwezig"})`;
-      } catch (err) {
-        syncStatusEl.textContent = "Kon wijziging niet opslaan";
-      }
-    }
-
-    document.getElementById("helpBtn").addEventListener("click", () => {
-      alert("Hulp nodig? Neem contact op met Support (bijv. intern toestel of receptie).");
-    });
-
-    updateClockAndGreeting();
-    setInterval(updateClockAndGreeting, 15000);
-    loadEmployees();
-  </script>
-</body>
-</html>
