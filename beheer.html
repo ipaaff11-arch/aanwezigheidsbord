@@ -13,6 +13,8 @@
       --green-soft: #E6F4F1;
       --purple: #4B246C;
       --purple-soft: #F3EEF8;
+      --danger-soft: #FEE2E2;
+      --danger-text: #991B1B;
       --border: #E2E6EC;
       --bg: #F6F7F9;
       --text: #1F2933;
@@ -272,6 +274,13 @@
       vertical-align: middle;
     }
 
+    .row-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
     .status-badge, .action-btn {
       border: none;
       border-radius: 999px;
@@ -292,6 +301,11 @@
     .btn-secondary {
       background: var(--purple-soft);
       color: var(--purple);
+    }
+
+    .btn-danger {
+      background: var(--danger-soft);
+      color: var(--danger-text);
     }
 
     .side-stack {
@@ -413,7 +427,7 @@
             <thead id="tableHead">
               <tr>
                 <th id="sortName">Naam ▲▼</th>
-                <th id="sortStatus">Status ▲▼</th>
+                <th id="sortStatus">Status &amp; Acties ▲▼</th>
               </tr>
             </thead>
             <tbody id="tableBody">
@@ -565,7 +579,7 @@
       tableHeadEl.innerHTML = `
         <tr>
           <th id="sortName">Naam ▲▼</th>
-          <th id="sortStatus">Status ▲▼</th>
+          <th id="sortStatus">Status &amp; Acties ▲▼</th>
         </tr>
       `;
       document.getElementById("sortName").addEventListener("click", () => {
@@ -606,16 +620,28 @@
         const tdName = document.createElement("td");
         tdName.textContent = emp.name;
 
-        const tdStatus = document.createElement("td");
+        const tdActions = document.createElement("td");
+        const actionsWrap = document.createElement("div");
+        actionsWrap.className = "row-actions";
+
         const badge = document.createElement("button");
         badge.type = "button";
         badge.className = "status-badge" + (emp.present ? " present" : "");
         badge.textContent = emp.present ? "Aanwezig" : "Niet aanwezig";
         badge.addEventListener("click", () => toggleStatus(emp));
 
-        tdStatus.appendChild(badge);
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "action-btn btn-danger";
+        delBtn.textContent = "Verwijderen";
+        delBtn.addEventListener("click", () => deleteEmployee(emp));
+
+        actionsWrap.appendChild(badge);
+        actionsWrap.appendChild(delBtn);
+        tdActions.appendChild(actionsWrap);
+
         tr.appendChild(tdName);
-        tr.appendChild(tdStatus);
+        tr.appendChild(tdActions);
         tableBodyEl.appendChild(tr);
       });
     }
@@ -626,11 +652,11 @@
         await fetch(WEB_APP_URL, {
           method: "POST",
           mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
         statusMsgEl.textContent = successText || "Bijgewerkt in Google Sheet";
-        setTimeout(() => loadData(true), 900);
+        setTimeout(() => loadData(true), 1200);
       } catch (err) {
         statusMsgEl.textContent = "Kon wijziging niet opslaan";
       }
@@ -663,6 +689,19 @@
       postAction(
         { action: "toggleEmployee", row: emp.row, present: nextPresent },
         `Bijgewerkt: ${emp.name} (${nextPresent ? "Aanwezig" : "Niet aanwezig"})`
+      );
+    }
+
+    function deleteEmployee(emp) {
+      const confirmed = window.confirm(`Weet je zeker dat je ${emp.name} wilt verwijderen uit de medewerkerslijst?`);
+      if (!confirmed) return;
+
+      employees = employees.filter(e => e.row !== emp.row);
+      updateKpis();
+      renderTable();
+      postAction(
+        { action: "deleteEmployee", row: emp.row },
+        `Medewerker verwijderd: ${emp.name}`
       );
     }
 
