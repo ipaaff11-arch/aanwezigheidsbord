@@ -41,6 +41,7 @@
       position: sticky;
       top: 0;
       z-index: 20;
+      flex-wrap: wrap;
     }
 
     .brand {
@@ -202,13 +203,23 @@
       font-weight: 700;
     }
 
-    .search-input {
+    .search-input, .text-input, .textarea-input {
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 9px 12px;
       font-family: inherit;
       font-size: 13px;
+      width: 100%;
+    }
+
+    .search-input {
+      width: auto;
       min-width: 220px;
+    }
+
+    .textarea-input {
+      min-height: 82px;
+      resize: vertical;
     }
 
     .subtabs {
@@ -218,6 +229,7 @@
       margin-bottom: 8px;
       font-size: 13px;
       font-weight: 600;
+      flex-wrap: wrap;
     }
 
     .subtab {
@@ -257,9 +269,10 @@
     td {
       padding: 11px 8px;
       border-bottom: 1px solid #F0F2F5;
+      vertical-align: middle;
     }
 
-    .status-badge {
+    .status-badge, .action-btn {
       border: none;
       border-radius: 999px;
       padding: 5px 12px;
@@ -271,9 +284,14 @@
       color: #4B5563;
     }
 
-    .status-badge.present {
+    .status-badge.present, .btn-primary {
       background: var(--green);
       color: #FFFFFF;
+    }
+
+    .btn-secondary {
+      background: var(--purple-soft);
+      color: var(--purple);
     }
 
     .side-stack {
@@ -282,31 +300,30 @@
       gap: 16px;
     }
 
-    .action-card {
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 16px;
+    .form-row {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      text-decoration: none;
-      color: var(--text);
-      font-weight: 600;
-      font-size: 14px;
-      background: #FFFFFF;
+      flex-direction: column;
+      gap: 8px;
       margin-bottom: 10px;
     }
 
-    .action-card:last-child { margin-bottom: 0; }
-    .action-card:hover { border-color: var(--purple); background: #FAF8FC; }
+    .form-inline {
+      display: flex;
+      gap: 8px;
+    }
 
-    .note-box {
-      background: var(--purple-soft);
-      border-radius: 12px;
-      padding: 12px 14px;
+    .handover-item {
+      border-bottom: 1px solid #F0F2F5;
+      padding: 10px 0;
+      font-size: 13px;
+    }
+
+    .handover-item:last-child { border-bottom: none; }
+
+    .handover-meta {
       font-size: 12px;
-      color: var(--purple);
-      line-height: 1.45;
+      color: var(--muted);
+      margin-bottom: 4px;
     }
 
     .footer-note {
@@ -339,6 +356,7 @@
       <button class="nav-btn active" data-view="dashboard">Dashboard</button>
       <button class="nav-btn" data-view="evac">Ontruiming</button>
       <button class="nav-btn" data-view="employees">Medewerkers</button>
+      <button class="nav-btn" data-view="guests">Gasten</button>
       <button class="nav-btn" data-view="handover">Overdracht</button>
     </div>
 
@@ -372,7 +390,7 @@
         <div class="kpi-icon">🏷️</div>
         <div>
           <div class="kpi-num" id="kpiGuests">0</div>
-          <div class="kpi-label">Gasten aanwezig (via Support)</div>
+          <div class="kpi-label">Gasten aanwezig</div>
         </div>
       </div>
     </section>
@@ -381,46 +399,66 @@
       <div class="panel">
         <div class="panel-header">
           <h2 class="panel-title" id="tableTitle">Huidige aanwezigheid</h2>
-          <input class="search-input" id="searchInput" type="search" placeholder="Zoek op naam..." />
+          <input class="search-input" id="searchInput" type="search" placeholder="Zoek op naam of organisatie..." />
         </div>
 
         <div class="subtabs">
-          <button class="subtab active" id="tabAll" type="button">Alle medewerkers (<span id="countAll">0</span>)</button>
-          <button class="subtab" id="tabPresentOnly" type="button">Alleen aanwezig (<span id="countPresentTab">0</span>)</button>
+          <button class="subtab active" id="tabEmployeesAll" type="button">Alle medewerkers (<span id="countAll">0</span>)</button>
+          <button class="subtab" id="tabEmployeesPresent" type="button">Alleen aanwezig (<span id="countPresentTab">0</span>)</button>
+          <button class="subtab" id="tabGuestsActive" type="button">Actieve gasten (<span id="countGuestsTab">0</span>)</button>
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th id="sortName">Naam ▲▼</th>
-              <th id="sortStatus">Status ▲▼</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody">
-            <tr><td colspan="2">Gegevens laden uit Google Sheet...</td></tr>
-          </tbody>
-        </table>
+        <div id="tableView">
+          <table>
+            <thead id="tableHead">
+              <tr>
+                <th id="sortName">Naam ▲▼</th>
+                <th id="sortStatus">Status ▲▼</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <tr><td colspan="2">Gegevens laden uit Google Sheet...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="handoverListView" style="display:none; margin-top:12px;">
+          <div id="handoverItems">Nog geen overdrachtsnotities geladen.</div>
+        </div>
       </div>
 
       <aside class="side-stack">
         <div class="panel">
-          <h3 class="panel-title" style="margin-bottom:14px;">Snelle acties</h3>
-          <a class="action-card" href="https://docs.google.com/spreadsheets/" target="_blank" rel="noopener">
-            <span>➕ Nieuwe medewerker toevoegen (Sheet)</span>
-            <span>→</span>
-          </a>
-          <a class="action-card" href="https://docs.google.com/spreadsheets/" target="_blank" rel="noopener">
-            <span>✏️ Medewerker gegevens bewerken (Sheet)</span>
-            <span>→</span>
-          </a>
+          <h3 class="panel-title" style="margin-bottom:10px;">Gast aanmelden</h3>
+          <form id="guestForm" class="form-row">
+            <input class="text-input" id="guestName" type="text" placeholder="Naam gast" required />
+            <input class="text-input" id="guestOrg" type="text" placeholder="Organisatie" />
+            <button class="action-btn btn-primary" type="submit">+ Gast aanmelden</button>
+          </form>
         </div>
 
         <div class="panel">
-          <h3 class="panel-title" style="margin-bottom:6px;">Gasten beheer (via Support)</h3>
-          <p style="margin:0 0 14px; font-size:13px; color:var(--muted);">Beheer de momenteel aanwezige gasten.</p>
-          <div class="note-box">
-            Gasten kunnen worden toegevoegd en beheerd zodra een tabblad <strong>Gasten</strong> aan de Google Sheet en Web-app is gekoppeld.
-          </div>
+          <h3 class="panel-title" style="margin-bottom:10px;">Medewerker toevoegen / bewerken</h3>
+          <form id="addEmpForm" class="form-row">
+            <div class="form-inline">
+              <input class="text-input" id="newEmpName" type="text" placeholder="Nieuwe medewerker (Voor- en achternaam)" required />
+              <button class="action-btn btn-primary" type="submit">Toevoegen</button>
+            </div>
+          </form>
+          <form id="editEmpForm" class="form-row" style="margin-top:12px;">
+            <input class="text-input" id="editEmpSearch" type="text" placeholder="Bestaande naam exact of deels..." />
+            <input class="text-input" id="editEmpNewName" type="text" placeholder="Nieuwe naam" />
+            <button class="action-btn btn-secondary" type="submit">Naam bijwerken</button>
+          </form>
+        </div>
+
+        <div class="panel">
+          <h3 class="panel-title" style="margin-bottom:10px;">Overdrachtsnotitie plaatsen</h3>
+          <form id="handoverForm" class="form-row">
+            <input class="text-input" id="handoverAuthor" type="text" placeholder="Naam / Receptie" value="Receptie" />
+            <textarea class="textarea-input" id="handoverNote" placeholder="Bijzonderheden, post, bezoek of overdracht..." required></textarea>
+            <button class="action-btn btn-primary" type="submit">Notitie opslaan</button>
+          </form>
         </div>
       </aside>
     </section>
@@ -435,10 +473,13 @@
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwbtNJ9-w0ic1DIbiiFkzSa7im2Anz39veneGWyq_M_K43a_s_HyXuqLbO_BlCpA13f/exec";
 
     let employees = [];
-    let onlyPresentFilter = false;
+    let guests = [];
+    let handovers = [];
+    let currentTab = "employees_all";
     let sortBy = "name";
     let sortAsc = true;
 
+    const tableHeadEl = document.getElementById("tableHead");
     const tableBodyEl = document.getElementById("tableBody");
     const searchInputEl = document.getElementById("searchInput");
     const statusMsgEl = document.getElementById("statusMsg");
@@ -448,18 +489,98 @@
       const total = employees.length;
       const present = employees.filter(e => e.present).length;
       const absent = total - present;
+      const activeGuests = guests.length;
 
       document.getElementById("kpiPresent").textContent = present;
       document.getElementById("kpiAbsent").textContent = absent;
       document.getElementById("kpiTotal").textContent = total;
+      document.getElementById("kpiGuests").textContent = activeGuests;
+
       document.getElementById("countAll").textContent = total;
       document.getElementById("countPresentTab").textContent = present;
+      document.getElementById("countGuestsTab").textContent = activeGuests;
+    }
+
+    function setSubtabActive(id) {
+      ["tabEmployeesAll", "tabEmployeesPresent", "tabGuestsActive"].forEach(tabId => {
+        document.getElementById(tabId).classList.toggle("active", tabId === id);
+      });
+    }
+
+    function renderHandovers() {
+      const wrap = document.getElementById("handoverItems");
+      if (!handovers.length) {
+        wrap.innerHTML = "<p style='color:var(--muted);font-size:13px;'>Nog geen overdrachtsnotities vastgelegd.</p>";
+        return;
+      }
+      wrap.innerHTML = handovers.map(h => `
+        <div class="handover-item">
+          <div class="handover-meta"><strong>${escapeHtml(h.author)}</strong> · ${escapeHtml(h.timestamp)}</div>
+          <div>${escapeHtml(h.note)}</div>
+        </div>
+      `).join("");
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
     }
 
     function renderTable() {
       const q = searchInputEl.value.trim().toLowerCase();
+
+      if (currentTab === "guests_active") {
+        tableHeadEl.innerHTML = `<tr><th>Gast</th><th>Organisatie</th><th>Actie</th></tr>`;
+        const filteredGuests = guests.filter(g =>
+          !q ||
+          g.name.toLowerCase().includes(q) ||
+          g.organization.toLowerCase().includes(q)
+        );
+        if (!filteredGuests.length) {
+          tableBodyEl.innerHTML = `<tr><td colspan="3">Geen actieve gasten gevonden.</td></tr>`;
+          return;
+        }
+        tableBodyEl.innerHTML = "";
+        filteredGuests.forEach(g => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${escapeHtml(g.name)}</td>
+            <td>${escapeHtml(g.organization || "—")}</td>
+            <td></td>
+          `;
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "action-btn btn-secondary";
+          btn.textContent = "Afmelden";
+          btn.addEventListener("click", () => checkoutGuest(g));
+          tr.children[2].appendChild(btn);
+          tableBodyEl.appendChild(tr);
+        });
+        return;
+      }
+
+      tableHeadEl.innerHTML = `
+        <tr>
+          <th id="sortName">Naam ▲▼</th>
+          <th id="sortStatus">Status ▲▼</th>
+        </tr>
+      `;
+      document.getElementById("sortName").addEventListener("click", () => {
+        if (sortBy === "name") sortAsc = !sortAsc;
+        else { sortBy = "name"; sortAsc = true; }
+        renderTable();
+      });
+      document.getElementById("sortStatus").addEventListener("click", () => {
+        if (sortBy === "status") sortAsc = !sortAsc;
+        else { sortBy = "status"; sortAsc = true; }
+        renderTable();
+      });
+
       let list = employees.filter(e => {
-        if (onlyPresentFilter && !e.present) return false;
+        if (currentTab === "employees_present" && !e.present) return false;
         if (q && !e.name.toLowerCase().includes(q)) return false;
         return true;
       });
@@ -494,4 +615,197 @@
 
         tdStatus.appendChild(badge);
         tr.appendChild(tdName);
-        tr.append
+        tr.appendChild(tdStatus);
+        tableBodyEl.appendChild(tr);
+      });
+    }
+
+    async function postAction(payload, successText) {
+      statusMsgEl.textContent = "Opslaan in Google Sheet...";
+      try {
+        await fetch(WEB_APP_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        statusMsgEl.textContent = successText || "Bijgewerkt in Google Sheet";
+        setTimeout(() => loadData(true), 900);
+      } catch (err) {
+        statusMsgEl.textContent = "Kon wijziging niet opslaan";
+      }
+    }
+
+    async function loadData(silent = false) {
+      try {
+        if (!silent) statusMsgEl.textContent = "Data ophalen uit Google Sheet...";
+        const res = await fetch(WEB_APP_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        employees = Array.isArray(data.employees) ? data.employees : [];
+        guests = Array.isArray(data.guests) ? data.guests : [];
+        handovers = Array.isArray(data.handovers) ? data.handovers : [];
+        updateKpis();
+        renderTable();
+        renderHandovers();
+        statusMsgEl.textContent = "Gesynchroniseerd met Google Sheet";
+        lastUpdatedEl.textContent = "Laatst bijgewerkt: " + new Date().toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      } catch (err) {
+        if (!silent) statusMsgEl.textContent = "Kon gegevens niet laden uit Google Sheet";
+      }
+    }
+
+    function toggleStatus(emp) {
+      const nextPresent = !emp.present;
+      emp.present = nextPresent;
+      updateKpis();
+      renderTable();
+      postAction(
+        { action: "toggleEmployee", row: emp.row, present: nextPresent },
+        `Bijgewerkt: ${emp.name} (${nextPresent ? "Aanwezig" : "Niet aanwezig"})`
+      );
+    }
+
+    function checkoutGuest(guest) {
+      guests = guests.filter(g => g.row !== guest.row);
+      updateKpis();
+      renderTable();
+      postAction(
+        { action: "checkoutGuest", row: guest.row },
+        `Gast afgemeld: ${guest.name}`
+      );
+    }
+
+    document.getElementById("guestForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const nameInput = document.getElementById("guestName");
+      const orgInput = document.getElementById("guestOrg");
+      const name = nameInput.value.trim();
+      const organization = orgInput.value.trim();
+      if (!name) return;
+
+      postAction(
+        { action: "addGuest", name, organization },
+        `Gast aangemeld: ${name}`
+      );
+      nameInput.value = "";
+      orgInput.value = "";
+    });
+
+    document.getElementById("addEmpForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const input = document.getElementById("newEmpName");
+      const name = input.value.trim();
+      if (!name) return;
+
+      postAction(
+        { action: "addEmployee", name },
+        `Medewerker toegevoegd: ${name}`
+      );
+      input.value = "";
+    });
+
+    document.getElementById("editEmpForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const searchVal = document.getElementById("editEmpSearch").value.trim().toLowerCase();
+      const newName = document.getElementById("editEmpNewName").value.trim();
+      if (!searchVal || !newName) return;
+
+      const match = employees.find(emp => emp.name.toLowerCase().includes(searchVal));
+      if (!match) {
+        statusMsgEl.textContent = "Geen medewerker gevonden met die naam";
+        return;
+      }
+
+      postAction(
+        { action: "updateEmployee", row: match.row, name: newName },
+        `Naam gewijzigd: ${match.name} → ${newName}`
+      );
+      document.getElementById("editEmpSearch").value = "";
+      document.getElementById("editEmpNewName").value = "";
+    });
+
+    document.getElementById("handoverForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const author = document.getElementById("handoverAuthor").value.trim() || "Receptie";
+      const noteInput = document.getElementById("handoverNote");
+      const note = noteInput.value.trim();
+      if (!note) return;
+
+      postAction(
+        { action: "addHandover", author, note },
+        "Overdrachtsnotitie opgeslagen"
+      );
+      noteInput.value = "";
+    });
+
+    searchInputEl.addEventListener("input", renderTable);
+    document.getElementById("refreshBtn").addEventListener("click", () => loadData(false));
+
+    document.getElementById("tabEmployeesAll").addEventListener("click", () => {
+      currentTab = "employees_all";
+      document.getElementById("tableView").style.display = "block";
+      document.getElementById("handoverListView").style.display = "none";
+      setSubtabActive("tabEmployeesAll");
+      renderTable();
+    });
+
+    document.getElementById("tabEmployeesPresent").addEventListener("click", () => {
+      currentTab = "employees_present";
+      document.getElementById("tableView").style.display = "block";
+      document.getElementById("handoverListView").style.display = "none";
+      setSubtabActive("tabEmployeesPresent");
+      renderTable();
+    });
+
+    document.getElementById("tabGuestsActive").addEventListener("click", () => {
+      currentTab = "guests_active";
+      document.getElementById("tableView").style.display = "block";
+      document.getElementById("handoverListView").style.display = "none";
+      setSubtabActive("tabGuestsActive");
+      renderTable();
+    });
+
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const view = btn.dataset.view;
+
+        if (view === "evac") {
+          currentTab = "employees_present";
+          document.getElementById("tableTitle").textContent = "Ontruimingslijst — Momenteel aanwezig";
+          document.getElementById("tableView").style.display = "block";
+          document.getElementById("handoverListView").style.display = "none";
+          setSubtabActive("tabEmployeesPresent");
+          renderTable();
+        } else if (view === "guests") {
+          currentTab = "guests_active";
+          document.getElementById("tableTitle").textContent = "Actieve gasten";
+          document.getElementById("tableView").style.display = "block";
+          document.getElementById("handoverListView").style.display = "none";
+          setSubtabActive("tabGuestsActive");
+          renderTable();
+        } else if (view === "handover") {
+          document.getElementById("tableTitle").textContent = "Overdrachtslogboek";
+          document.getElementById("tableView").style.display = "none";
+          document.getElementById("handoverListView").style.display = "block";
+          renderHandovers();
+        } else {
+          currentTab = "employees_all";
+          document.getElementById("tableTitle").textContent = view === "employees"
+            ? "Medewerkersoverzicht"
+            : "Huidige aanwezigheid";
+          document.getElementById("tableView").style.display = "block";
+          document.getElementById("handoverListView").style.display = "none";
+          setSubtabActive("tabEmployeesAll");
+          renderTable();
+        }
+      });
+    });
+
+    loadData();
+    setInterval(() => loadData(true), 60000);
+  </script>
+</body>
+</html>
