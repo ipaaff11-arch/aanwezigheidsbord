@@ -360,13 +360,51 @@
       cursor: pointer;
     }
 
-    .footer-note {
-      font-size: 12px;
-      color: var(--muted);
+    .status-bar {
       display: flex;
       justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .sync-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .sync-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #16A34A;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .sync-dot.error {
+      background: #DC2626;
+    }
+
+    .sync-refresh {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      color: var(--purple);
+    }
+
+    .sync-refresh.active {
+      display: inline-flex;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
 
     @media (max-width: 820px) {
@@ -501,9 +539,19 @@
       </div>
     </section>
 
-    <div class="footer-note">
-      <span id="statusMsg">Verbinden met Google Sheet...</span>
-      <span id="lastUpdated">Laatst bijgewerkt: —</span>
+    <div class="status-bar">
+      <div class="sync-wrap" id="syncStatus">
+        <span>Synchronisatie</span>
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncTime">--:--</span>
+        <span class="sync-refresh" id="syncRefresh" aria-label="Bezig met synchroniseren">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+            <polyline points="21 3 21 9 15 9"/>
+          </svg>
+        </span>
+      </div>
+      <span id="counterText">0 van 0 aanwezig</span>
     </div>
   </main>
 
@@ -528,8 +576,22 @@
     const selectedLabelEl = document.getElementById("selectedLabel");
     const editEmpNewNameEl = document.getElementById("editEmpNewName");
 
-    const statusMsgEl = document.getElementById("statusMsg");
-    const lastUpdatedEl = document.getElementById("lastUpdated");
+    const syncDotEl = document.getElementById("syncDot");
+    const syncTimeEl = document.getElementById("syncTime");
+    const syncRefreshEl = document.getElementById("syncRefresh");
+    const counterTextEl = document.getElementById("counterText");
+
+    function formatSyncTime(date = new Date()) {
+      return date.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function setSyncState({ syncing = false, error = false, updateTime = false } = {}) {
+      syncRefreshEl.classList.toggle("active", syncing);
+      syncDotEl.classList.toggle("error", error);
+      if (updateTime) {
+        syncTimeEl.textContent = formatSyncTime();
+      }
+    }
 
     function switchView(view) {
       activeView = view;
@@ -549,6 +611,7 @@
       document.getElementById("kpiAbsent").textContent = absent;
       document.getElementById("kpiTotal").textContent = total;
       document.getElementById("manageCount").textContent = total;
+      counterTextEl.textContent = `${present} van ${total} aanwezig`;
     }
 
     function syncSelectionUi() {
@@ -673,8 +736,8 @@
       });
     }
 
-    async function postAction(payload, successText) {
-      statusMsgEl.textContent = "Opslaan in Google Sheet...";
+    async function postAction(payload) {
+      setSyncState({ syncing: true, error: false });
       try {
         await fetch(WEB_APP_URL, {
           method: "POST",
@@ -682,16 +745,16 @@
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
-        statusMsgEl.textContent = successText || "Bijgewerkt in Google Sheet";
+        setSyncState({ syncing: false, error: false, updateTime: true });
         setTimeout(() => loadData(true), 1200);
       } catch (err) {
-        statusMsgEl.textContent = "Kon wijziging niet opslaan";
+        setSyncState({ syncing: false, error: true });
       }
     }
 
     async function loadData(silent = false) {
+      setSyncState({ syncing: true, error: false });
       try {
-        if (!silent) statusMsgEl.textContent = "Data ophalen uit Google Sheet...";
         const res = await fetch(WEB_APP_URL, { cache: "no-store" });
         if (!res.ok) throw new Error("HTTP " + res.status);
         const data = await res.json();
@@ -704,15 +767,9 @@
         updateKpis();
         renderOverviewTable();
         syncSelectionUi();
-
-        statusMsgEl.textContent = "Gesynchroniseerd met Google Sheet";
-        lastUpdatedEl.textContent = "Laatst bijgewerkt: " + new Date().toLocaleTimeString("nl-NL", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit"
-        });
+        setSyncState({ syncing: false, error: false, updateTime: true });
       } catch (err) {
-        if (!silent) statusMsgEl.textContent = "Kon gegevens niet laden uit Google Sheet";
+        setSyncState({ syncing: false, error: true });
       }
     }
 
@@ -722,10 +779,7 @@
       updateKpis();
       renderOverviewTable();
       renderManageTable();
-      postAction(
-        { action: "toggleEmployee", row: emp.row, present: nextPresent },
-        `Bijgewerkt: ${emp.name} (${nextPresent ? "Aanwezig" : "Niet aanwezig"})`
-      );
+      postAction({ action: "toggleEmployee", row: emp.row, present: nextPresent });
     }
 
     document.getElementById("addEmpForm").addEventListener("submit", (e) => {
@@ -734,39 +788,26 @@
       const name = input.value.trim();
       if (!name) return;
 
-      postAction(
-        { action: "addEmployee", name },
-        `Collega toegevoegd: ${name}`
-      );
+      postAction({ action: "addEmployee", name });
       input.value = "";
     });
 
     document.getElementById("editEmpForm").addEventListener("submit", (e) => {
       e.preventDefault();
-      if (!selectedEmployee) {
-        statusMsgEl.textContent = "Klik eerst op een naam in de lijst om die te selecteren";
-        return;
-      }
+      if (!selectedEmployee) return;
       const newName = editEmpNewNameEl.value.trim();
       if (!newName) return;
 
-      const oldName = selectedEmployee.name;
       selectedEmployee.name = newName;
       updateKpis();
       renderOverviewTable();
       syncSelectionUi();
 
-      postAction(
-        { action: "updateEmployee", row: selectedEmployee.row, name: newName },
-        `Naam gewijzigd: ${oldName} → ${newName}`
-      );
+      postAction({ action: "updateEmployee", row: selectedEmployee.row, name: newName });
     });
 
     document.getElementById("deleteSelectedEmpBtn").addEventListener("click", () => {
-      if (!selectedEmployee) {
-        statusMsgEl.textContent = "Klik eerst op een naam in de lijst om die te verwijderen";
-        return;
-      }
+      if (!selectedEmployee) return;
 
       const target = selectedEmployee;
       const confirmed = window.confirm(`Weet je zeker dat je ${target.name} wilt verwijderen uit de medewerkerslijst?`);
@@ -778,10 +819,7 @@
       renderOverviewTable();
       syncSelectionUi();
 
-      postAction(
-        { action: "deleteEmployee", row: target.row },
-        `Collega verwijderd: ${target.name}`
-      );
+      postAction({ action: "deleteEmployee", row: target.row });
     });
 
     document.getElementById("clearSelectionBtn").addEventListener("click", clearSelection);
