@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="BHV Ede" />
+  <title>aaff. BHV Ontruiming Ede</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green: #007A68;
+      --green-soft: #E6F4F1;
+      --purple: #4B246C;
+      --purple-soft: #F3EEF8;
+      --ochre: #D97706;
+      --ochre-bg: #FEF3C7;
+      --ochre-border: #F59E0B;
+      --ochre-text: #78350F;
+      --border: #E2E6EC;
+      --bg: #F6F7F9;
+      --text: #1F2933;
+      --muted: #6B7280;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      background: #FFFFFF;
+      border-bottom: 2px solid var(--purple);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo svg {
+      height: 24px;
+      width: auto;
+      display: block;
+    }
+
+    .divider {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--purple);
+      line-height: 1.1;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .icon-btn:active {
+      background: var(--purple-soft);
+      border-color: var(--purple);
+      color: var(--purple);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 14px 14px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .kpi-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 10px;
+      text-align: center;
+    }
+
+    .kpi-card.present-card {
+      background: var(--green-soft);
+      border-color: #B7DFD8;
+    }
+
+    .kpi-card.checked-card {
+      background: var(--ochre-bg);
+      border-color: var(--ochre-border);
+    }
+
+    .kpi-num {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .kpi-card.present-card .kpi-num { color: var(--green); }
+    .kpi-card.checked-card .kpi-num { color: var(--ochre-text); }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .kpi-card.checked-card .kpi-label { color: var(--ochre-text); }
+
+    .search-bar {
+      display: flex;
+      gap: 8px;
+    }
+
+    .search-input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-family: inherit;
+      font-size: 15px;
+      background: #FFFFFF;
+      color: var(--text);
+    }
+
+    .section-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .group-header {
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .group-header.present-group {
+      background: var(--green-soft);
+      color: var(--green);
+      border-color: #CBE7E2;
+    }
+
+    .group-header.checked-group {
+      background: var(--ochre-bg);
+      color: var(--ochre-text);
+      border-color: #FCD34D;
+    }
+
+    .group-header.absent-group {
+      background: #FAFAFB;
+      color: var(--purple);
+    }
+
+    .person-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .person-row {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid #F0F2F5;
+      background: #FFFFFF;
+      padding: 14px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      text-align: left;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .person-row:last-child {
+      border-bottom: none;
+    }
+
+    .person-row:active {
+      opacity: 0.85;
+    }
+
+    .person-row.checked-in {
+      background: var(--ochre-bg);
+      border-bottom-color: #FDE68A;
+    }
+
+    .person-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .person-row.checked-in .person-name {
+      color: var(--ochre-text);
+    }
+
+    .person-pill {
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .pill-present {
+      background: var(--green);
+      color: #FFFFFF;
+    }
+
+    .pill-checked {
+      background: var(--ochre);
+      color: #FFFFFF;
+    }
+
+    .pill-absent {
+      background: #ECEFF3;
+      color: #4B5563;
+    }
+
+    .empty-msg {
+      padding: 14px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .info-note {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      padding-top: 4px;
+    }
+
+    .sync-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sync-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #16A34A;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .sync-dot.error {
+      background: #DC2626;
+    }
+
+    .sync-refresh {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 15px;
+      height: 15px;
+      color: var(--purple);
+    }
+
+    .sync-refresh.active {
+      display: inline-flex;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-label="aaff.">
+        <svg viewBox="0 0 280 90" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+          <path fill="#4E1D76" d="M36 27c-17.1 0-30 12.9-30 30s12.9 30 30 30c7.4 0 13.7-2.4 18.2-6.7V85h13.8V29H54.2v4.7C49.7 29.4 43.4 27 36 27zm1 13c9.7 0 17.2 7.3 17.2 17s-7.5 17-17.2 17-17.2-7.3-17.2-17S27.3 40 37 40z"/>
+          <path fill="#4E1D76" d="M107 27c-17.1 0-30 12.9-30 30s12.9 30 30 30c7.4 0 13.7-2.4 18.2-6.7V85h13.8V29h-13.8v4.7C120.7 29.4 114.4 27 107 27zm1 13c9.7 0 17.2 7.3 17.2 17s-7.5 17-17.2 17-17.2-7.3-17.2-17S98.3 40 108 40z"/>
+          <path fill="#4E1D76" d="M180 5c-13.8 0-22 8.2-22 22v2h-8v12.5h8V85h14.5V41.5h13V29h-13v-2c0-5.8 3.1-9 8.8-9 2.3 0 4.4.4 6.2 1V6.2C185.3 5.4 182.7 5 180 5z"/>
+          <path fill="#4E1D76" d="M222 5c-13.8 0-22 8.2-22 22v2h-8v12.5h8V85h14.5V41.5h13V29h-13v-2c0-5.8 3.1-9 8.8-9 2.3 0 4.4.4 6.2 1V6.2C227.3 5.4 224.7 5 222 5z"/>
+          <path fill="#17B69B" d="M255 66c-5.5 0-10 4.5-10 10s4.5 10 10 10h10V76c0-5.5-4.5-10-10-10z"/>
+        </svg>
+      </div>
+      <div class="divider"></div>
+      <div>
+        <div class="brand-title">BHV Ontruiming Ede</div>
+        <div class="brand-sub">Verzamelplaats</div>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button class="icon-btn" id="resetBtn" type="button">Reset vinkjes</button>
+      <button class="icon-btn" id="refreshBtn" type="button">↻</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="kpi-grid">
+      <div class="kpi-card present-card">
+        <div class="kpi-num" id="kpiRemaining">0</div>
+        <div class="kpi-label">Nog in pand</div>
+      </div>
+      <div class="kpi-card checked-card">
+        <div class="kpi-num" id="kpiChecked">0</div>
+        <div class="kpi-label">Verzamelplaats</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-num" id="kpiAbsent">0</div>
+        <div class="kpi-label">Niet aanwezig</div>
+      </div>
+    </section>
+
+    <div class="search-bar">
+      <input class="search-input" id="searchInput" type="search" placeholder="Zoek collega..." />
+    </div>
+
+    <!-- 1. AANWEZIG (NOG NIET AFGETEKEND) -->
+    <section class="section-card">
+      <div class="group-header present-group">
+        <span>Aanwezig — nog aftekenen</span>
+        <span id="countPresent">0</span>
+      </div>
+      <div class="person-list" id="presentList"></div>
+    </section>
+
+    <!-- 2. AFGETEKEND OP VERZAMELPLAATS (OKERGEEL) -->
+    <section class="section-card">
+      <div class="group-header checked-group">
+        <span>Verzamelplaats — afgetekend</span>
+        <span id="countChecked">0</span>
+      </div>
+      <div class="person-list" id="checkedList"></div>
+    </section>
+
+    <!-- 3. NIET AANWEZIG -->
+    <section class="section-card">
+      <div class="group-header absent-group">
+        <span>Niet aanwezig</span>
+        <span id="countAbsent">0</span>
+      </div>
+      <div class="person-list" id="absentList"></div>
+    </section>
+
+    <div class="info-note">
+      Tik op een collega om af te tekenen op de verzamelplaats (okergeel). Wijzigingen worden gedeeld met alle openstaande BHV-schermen en niet teruggeschreven naar Google Sheets.
+    </div>
+
+    <div class="status-bar">
+      <div class="sync-wrap">
+        <span>Synchronisatie</span>
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncTime">--:--</span>
+        <span class="sync-refresh" id="syncRefresh" aria-label="Bezig met synchroniseren">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+            <polyline points="21 3 21 9 15 9"/>
+          </svg>
+        </span>
+      </div>
+      <span id="liveShareLabel">Live BHV-deling actief</span>
+    </div>
+  </main>
+
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwbtNJ9-w0ic1DIbiiFkzSa7im2Anz39veneGWyq_M_K43a_s_HyXuqLbO_BlCpA13f/exec";
+    const STORAGE_KEY = "aaff_bhv_ede_muster_v1";
+    const CHANNEL_NAME = "aaff_bhv_ede_channel";
+
+    let employees = [];
+    let musteredMap = loadStoredMusterState();
+    let isSyncing = false;
+
+    const searchInputEl = document.getElementById("searchInput");
+    const presentListEl = document.getElementById("presentList");
+    const checkedListEl = document.getElementById("checkedList");
+    const absentListEl = document.getElementById("absentList");
+
+    const syncDotEl = document.getElementById("syncDot");
+    const syncTimeEl = document.getElementById("syncTime");
+    const syncRefreshEl = document.getElementById("syncRefresh");
+    const liveShareLabelEl = document.getElementById("liveShareLabel");
+
+    const bc = ("BroadcastChannel" in window) ? new BroadcastChannel(CHANNEL_NAME) : null;
+
+    function loadStoredMusterState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveAndBroadcastMusterState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(musteredMap));
+      } catch (e) {}
+      if (bc) {
+        bc.postMessage({ type: "MUSTER_UPDATE", musteredMap });
+      }
+    }
+
+    if (bc) {
+      bc.onmessage = (event) => {
+        if (event.data && event.data.type === "MUSTER_UPDATE") {
+          musteredMap = event.data.musteredMap || {};
+          renderAll();
+        }
+      };
+    }
+
+    window.addEventListener("storage", (e) => {
+      if (e.key === STORAGE_KEY) {
+        musteredMap = loadStoredMusterState();
+        renderAll();
+      }
+    });
+
+    function formatSyncTime(date = new Date()) {
+      return date.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function setSyncState({ syncing = false, error = false, updateTime = false } = {}) {
+      syncRefreshEl.classList.toggle("active", syncing);
+      syncDotEl.classList.toggle("error", error);
+      if (updateTime) {
+        syncTimeEl.textContent = formatSyncTime();
+      }
+    }
+
+    function getPersonKey(emp) {
+      return `${emp.row}::${emp.name}`;
+    }
+
+    function isMustered(emp) {
+      return Boolean(musteredMap[getPersonKey(emp)]);
+    }
+
+    function toggleMuster(emp) {
+      const key = getPersonKey(emp);
+      if (musteredMap[key]) {
+        delete musteredMap[key];
+      } else {
+        musteredMap[key] = true;
+      }
+      saveAndBroadcastMusterState();
+      renderAll();
+    }
+
+    function createPersonRow(emp, state) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "person-row" + (state === "checked" ? " checked-in" : "");
+
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "person-name";
+      nameSpan.textContent = emp.name;
+
+      const pillSpan = document.createElement("span");
+      pillSpan.className = "person-pill " + (
+        state === "checked" ? "pill-checked" :
+        state === "present" ? "pill-present" : "pill-absent"
+      );
+      pillSpan.textContent =
+        state === "checked" ? "Op verzamelplaats" :
+        state === "present" ? "Aanwezig" : "Niet aanwezig";
+
+      btn.appendChild(nameSpan);
+      btn.appendChild(pillSpan);
+      btn.addEventListener("click", () => toggleMuster(emp));
+      return btn;
+    }
+
+    function renderGroup(container, list, state, emptyText) {
+      container.innerHTML = "";
+      if (!list.length) {
+        const div = document.createElement("div");
+        div.className = "empty-msg";
+        div.textContent = emptyText;
+        container.appendChild(div);
+        return;
+      }
+      list.forEach(emp => {
+        container.appendChild(createPersonRow(emp, state));
+      });
+    }
+
+    function renderAll() {
+      const q = searchInputEl.value.trim().toLowerCase();
+
+      const allPresent = employees.filter(e => e.present && !isMustered(e));
+      const allChecked = employees.filter(e => isMustered(e));
+      const allAbsent = employees.filter(e => !e.present && !isMustered(e));
+
+      document.getElementById("kpiRemaining").textContent = allPresent.length;
+      document.getElementById("kpiChecked").textContent = allChecked.length;
+      document.getElementById("kpiAbsent").textContent = allAbsent.length;
+
+      const filteredPresent = allPresent
+        .filter(e => !q || e.name.toLowerCase().includes(q))
+        .sort((a, b) => a.name.localeCompare(b.name, "nl"));
+
+      const filteredChecked = allChecked
+        .filter(e => !q || e.name.toLowerCase().includes(q))
+        .sort((a, b) => a.name.localeCompare(b.name, "nl"));
+
+      const filteredAbsent = allAbsent
+        .filter(e => !q || e.name.toLowerCase().includes(q))
+        .sort((a, b) => a.name.localeCompare(b.name, "nl"));
+
+      document.getElementById("countPresent").textContent = filteredPresent.length;
+      document.getElementById("countChecked").textContent = filteredChecked.length;
+      document.getElementById("countAbsent").textContent = filteredAbsent.length;
+
+      renderGroup(presentListEl, filteredPresent, "present", "Iedereen die aanwezig was is afgetekend.");
+      renderGroup(checkedListEl, filteredChecked, "checked", "Nog niemand afgetekend op de verzamelplaats.");
+      renderGroup(absentListEl, filteredAbsent, "absent", "Geen afwezige collega's gevonden.");
+    }
+
+    async function loadEmployees() {
+      if (isSyncing) return;
+      isSyncing = true;
+      setSyncState({ syncing: true, error: false });
+
+      try {
+        // Alleen ophalen (GET) — schrijft nooit terug naar Google Sheets
+        const res = await fetch(WEB_APP_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        employees = Array.isArray(data.employees) ? data.employees : [];
+        renderAll();
+        setSyncState({ syncing: false, error: false, updateTime: true });
+      } catch (err) {
+        setSyncState({ syncing: false, error: true });
+      } finally {
+        isSyncing = false;
+      }
+    }
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      if (!Object.keys(musteredMap).length) return;
+      const ok = window.confirm("Alle okergele verzamelplaats-vinkjes wissen en opnieuw beginnen?");
+      if (!ok) return;
+      musteredMap = {};
+      saveAndBroadcastMusterState();
+      renderAll();
+    });
+
+    document.getElementById("refreshBtn").addEventListener("click", loadEmployees);
+    searchInputEl.addEventListener("input", renderAll);
+
+    loadEmployees();
+    setInterval(loadEmployees, 30000);
+  </script>
+</body>
+</html>
