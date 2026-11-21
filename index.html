@@ -13,6 +13,8 @@
   <style>
     :root {
       --green: #007A68;
+      --logo-teal: #17B69B;
+      --logo-purple: #4E1D76;
       --purple: #4B246C;
       --border: #D9DDE2;
       --bg: #F4F5F7;
@@ -55,20 +57,21 @@
       display: grid;
       grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      border-bottom: 2px solid #EFEAF4;
-      padding: 20px 0 12px;
+      border-bottom: 3px solid var(--purple);
+      padding: 20px 0 14px;
       gap: 12px;
     }
 
     .logo {
-      font-size: 38px;
-      font-weight: 700;
-      color: var(--purple);
-      letter-spacing: -1px;
+      display: flex;
+      align-items: center;
+      justify-self: start;
     }
 
-    .logo span {
-      color: var(--green);
+    .logo svg {
+      height: 36px;
+      width: auto;
+      display: block;
     }
 
     .greeting-wrap {
@@ -93,17 +96,21 @@
       text-align: right;
       font-family: 'Caveat', cursive;
       color: var(--purple);
+      padding-right: 16px;
+      justify-self: end;
     }
 
     .datetime .date {
       font-size: 24px;
       line-height: 1.05;
+      white-space: nowrap;
     }
 
     .datetime .time {
       font-size: 32px;
       font-weight: 700;
       line-height: 1.05;
+      white-space: nowrap;
     }
 
     .grid {
@@ -118,7 +125,7 @@
     .pill {
       height: 52px;
       border-radius: 999px;
-      border: 1.5px solid var(--border);
+      border: 3px solid var(--border);
       background: #FFFFFF;
       color: var(--text);
       font-family: inherit;
@@ -175,6 +182,44 @@
       color: var(--muted);
     }
 
+    .sync-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .sync-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #16A34A;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .sync-dot.error {
+      background: #DC2626;
+    }
+
+    .sync-refresh {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      color: var(--purple);
+    }
+
+    .sync-refresh.active {
+      display: inline-flex;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -228,7 +273,20 @@
 <body>
   <div class="board">
     <header>
-      <div class="logo">aaff<span>.</span></div>
+      <div class="logo" aria-label="aaff.">
+        <svg viewBox="0 0 280 90" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+          <!-- Eerste a -->
+          <path fill="#4E1D76" d="M36 27c-17.1 0-30 12.9-30 30s12.9 30 30 30c7.4 0 13.7-2.4 18.2-6.7V85h13.8V29H54.2v4.7C49.7 29.4 43.4 27 36 27zm1 13c9.7 0 17.2 7.3 17.2 17s-7.5 17-17.2 17-17.2-7.3-17.2-17S27.3 40 37 40z"/>
+          <!-- Tweede a -->
+          <path fill="#4E1D76" d="M107 27c-17.1 0-30 12.9-30 30s12.9 30 30 30c7.4 0 13.7-2.4 18.2-6.7V85h13.8V29h-13.8v4.7C120.7 29.4 114.4 27 107 27zm1 13c9.7 0 17.2 7.3 17.2 17s-7.5 17-17.2 17-17.2-7.3-17.2-17S98.3 40 108 40z"/>
+          <!-- Eerste f -->
+          <path fill="#4E1D76" d="M180 5c-13.8 0-22 8.2-22 22v2h-8v12.5h8V85h14.5V41.5h13V29h-13v-2c0-5.8 3.1-9 8.8-9 2.3 0 4.4.4 6.2 1V6.2C185.3 5.4 182.7 5 180 5z"/>
+          <!-- Tweede f -->
+          <path fill="#4E1D76" d="M222 5c-13.8 0-22 8.2-22 22v2h-8v12.5h8V85h14.5V41.5h13V29h-13v-2c0-5.8 3.1-9 8.8-9 2.3 0 4.4.4 6.2 1V6.2C227.3 5.4 224.7 5 222 5z"/>
+          <!-- Groene druppelvormige punt -->
+          <path fill="#17B69B" d="M255 66c-5.5 0-10 4.5-10 10s4.5 10 10 10h10V76c0-5.5-4.5-10-10-10z"/>
+        </svg>
+      </div>
       <div class="greeting-wrap">
         <div class="greeting" id="greeting">Goedemiddag, Welkom in Ede.</div>
         <div class="subtitle">Meld je aan of af voor je aanwezigheid</div>
@@ -250,7 +308,17 @@
     </button>
 
     <div class="status-bar">
-      <span id="syncStatus">Verbinden met aanwezigheidsbord...</span>
+      <div class="sync-wrap" id="syncStatus">
+        <span>Synchronisatie</span>
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncTime">--:--</span>
+        <span class="sync-refresh" id="syncRefresh" aria-label="Bezig met synchroniseren">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+            <polyline points="21 3 21 9 15 9"/>
+          </svg>
+        </span>
+      </div>
       <span id="counterText">0 aanwezig</span>
     </div>
   </div>
@@ -267,12 +335,26 @@
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwbtNJ9-w0ic1DIbiiFkzSa7im2Anz39veneGWyq_M_K43a_s_HyXuqLbO_BlCpA13f/exec";
 
     const gridEl = document.getElementById("grid");
-    const syncStatusEl = document.getElementById("syncStatus");
+    const syncDotEl = document.getElementById("syncDot");
+    const syncTimeEl = document.getElementById("syncTime");
+    const syncRefreshEl = document.getElementById("syncRefresh");
     const counterTextEl = document.getElementById("counterText");
     const helpModalEl = document.getElementById("helpModal");
 
     let employees = [];
     let isSyncing = false;
+
+    function formatSyncTime(date = new Date()) {
+      return date.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function setSyncState({ syncing = false, error = false, updateTime = false } = {}) {
+      syncRefreshEl.classList.toggle("active", syncing);
+      syncDotEl.classList.toggle("error", error);
+      if (updateTime) {
+        syncTimeEl.textContent = formatSyncTime();
+      }
+    }
 
     function updateClockAndGreeting() {
       const now = new Date();
@@ -311,17 +393,15 @@
 
     async function loadEmployees(silent = false) {
       if (!WEB_APP_URL || WEB_APP_URL.includes("JOUW_SCRIPT_ID")) {
-        syncStatusEl.textContent = "Vul eerst jouw echte Apps Script Web-app-URL in bij WEB_APP_URL";
+        setSyncState({ syncing: false, error: true });
         return;
       }
 
       if (isSyncing) return;
       isSyncing = true;
+      setSyncState({ syncing: true, error: false });
 
       try {
-        if (!silent) {
-          syncStatusEl.textContent = "Namen en statussen laden...";
-        }
         const res = await fetch(WEB_APP_URL, { cache: "no-store" });
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
@@ -329,11 +409,9 @@
         const data = await res.json();
         employees = Array.isArray(data.employees) ? data.employees : [];
         renderGrid();
-        syncStatusEl.textContent = "Gekoppeld aan Google Sheet";
+        setSyncState({ syncing: false, error: false, updateTime: true });
       } catch (err) {
-        if (!silent) {
-          syncStatusEl.textContent = "Fout bij laden uit Google Sheet — controleer Web-app-URL en toegang (Iedereen)";
-        }
+        setSyncState({ syncing: false, error: true });
       } finally {
         isSyncing = false;
       }
@@ -348,7 +426,7 @@
       emp.present = nextPresent;
       btn.classList.toggle("present", nextPresent);
       updateCounter();
-      syncStatusEl.textContent = "Opslaan in Google Sheet...";
+      setSyncState({ syncing: true, error: false });
 
       try {
         await fetch(WEB_APP_URL, {
@@ -357,12 +435,12 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ row: emp.row, present: nextPresent })
         });
-        syncStatusEl.textContent = `Laatst bijgewerkt: ${emp.name} (${nextPresent ? "Aanwezig" : "Afwezig"})`;
+        setSyncState({ syncing: false, error: false, updateTime: true });
       } catch (err) {
         emp.present = prevPresent;
         btn.classList.toggle("present", prevPresent);
         updateCounter();
-        syncStatusEl.textContent = "Kon wijziging niet opslaan — status teruggezet";
+        setSyncState({ syncing: false, error: true });
       }
     }
 
